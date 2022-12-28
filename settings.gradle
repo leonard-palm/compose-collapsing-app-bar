@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "ComposeCollapsingAppBarLib"
 include ':app'
+include ':compose-collapsing-app-bar'
