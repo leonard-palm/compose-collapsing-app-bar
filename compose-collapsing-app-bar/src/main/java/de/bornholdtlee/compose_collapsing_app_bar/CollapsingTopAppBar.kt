@@ -1,6 +1,5 @@
 package de.bornholdtlee.compose_collapsing_app_bar
 
-import androidx.annotation.FloatRange
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,27 +7,23 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import de.bornholdtlee.compose_collapsing_app_bar.CollapsingState.InTransition.PreferredProgressDirection
 
 @Composable
 fun CollapsingTopAppBarLayout(
     modifier: Modifier = Modifier,
     scrollState: CustomScrollState,
-    barStaticContent: @Composable (growthFactor: Float) -> Unit,
+    barStaticContent: @Composable (collapsingState: CollapsingState) -> Unit,
     barStaticBackgroundColor: Color = MaterialTheme.colors.primary,
-    barCollapsingContent: @Composable (growthFactor: Float) -> Unit,
+    barCollapsingContent: @Composable (collapsingState: CollapsingState) -> Unit,
     barCollapsingBackgroundColor: Color = MaterialTheme.colors.primaryVariant,
     barCollapsingRadiusBottomStart: Dp = 0.dp,
     barCollapsingRadiusBottomEnd: Dp = 0.dp,
+    endedInPartialTransitionStrategy: EndedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.COLLAPSE_OR_EXPAND_TO_NEAREST,
     screenContent: @Composable ColumnScope.() -> Unit
 ) {
 
@@ -60,14 +55,53 @@ fun CollapsingTopAppBarLayout(
             }
         }
 
-        val growthFactor: Float by remember(
+        // TODO: Move to dedicated state holder
+        val collapsingState: CollapsingState by remember(
             key1 = collapsibleHeightPx
         ) {
             derivedStateOf {
-                calculateGrowthFactor(
+                determineCollapsingState(
                     totalExpandedHeight = barCollapsibleContentExpandedHeightPx,
                     currentHeight = collapsibleHeightPx
                 )
+            }
+        }
+
+        // TODO: Move to dedicated state holder
+        suspend fun collapse() {
+            scrollState.animateScrollTo(value = barCollapsibleContentExpandedHeightPx)
+
+        }
+
+        // TODO: Move to dedicated state holder
+        suspend fun expand() {
+            scrollState.animateScrollTo(value = 0)
+        }
+
+        // TODO: Move to dedicated state holder
+        suspend fun onHandleEndedInTransition(inTransitionState: CollapsingState.InTransition) {
+            when (endedInPartialTransitionStrategy) {
+                EndedInPartialTransitionStrategy.STAY -> {}
+                EndedInPartialTransitionStrategy.COLLAPSE -> collapse()
+                EndedInPartialTransitionStrategy.EXPAND -> expand()
+                EndedInPartialTransitionStrategy.COLLAPSE_OR_EXPAND_TO_NEAREST -> {
+                    when (inTransitionState.preferredProgressDirection) {
+                        PreferredProgressDirection.EXPAND -> expand()
+                        PreferredProgressDirection.COLLAPSE -> collapse()
+                    }
+                }
+            }
+        }
+
+        LaunchedEffect(key1 = scrollState.isScrollInProgress) {
+            if (!scrollState.isScrollInProgress) {
+                collapsingState.let { immutableCollapsingState ->
+                    if (immutableCollapsingState is CollapsingState.InTransition) {
+                        onHandleEndedInTransition(
+                            inTransitionState = immutableCollapsingState
+                        )
+                    }
+                }
             }
         }
 
@@ -86,12 +120,12 @@ fun CollapsingTopAppBarLayout(
                         barStaticContentHeightPx = layoutCoordinates.size.height
                     }
             ) {
-                barStaticContent(growthFactor)
+                barStaticContent(collapsingState)
             }
 
             Measure(
                 content = @Composable {
-                    barCollapsingContent(0f)
+                    barCollapsingContent(CollapsingState.Collapsed)
                 },
                 onMeasured = { size ->
                     barCollapsibleContentExpandedHeightPx = size.height
@@ -113,7 +147,7 @@ fun CollapsingTopAppBarLayout(
                     )
 
             ) {
-                barCollapsingContent(growthFactor)
+                barCollapsingContent(collapsingState)
             }
         }
 
@@ -133,37 +167,19 @@ fun CollapsingTopAppBarLayout(
     }
 }
 
-@Composable
-private fun Measure(
-    content: @Composable () -> Unit,
-    onMeasured: (size: IntSize) -> Unit
-) {
-    SubcomposeLayout { constraints: Constraints ->
-        val placeables: List<Placeable> = subcompose(
-            slotId = 0,
-            content = content
-        ).map { measurable: Measurable ->
-            measurable.measure(
-                constraints = constraints.copy(minWidth = 0, minHeight = 0)
-            )
-        }
-        val maxWidth: Int = placeables.sumOf { placeable -> placeable.width }
-        val maxHeight: Int = placeables.sumOf { placeable -> placeable.height }
-        onMeasured(IntSize(maxWidth, maxHeight))
-        layout(0, 0) {}
-    }
+enum class EndedInPartialTransitionStrategy {
+    STAY,
+    COLLAPSE,
+    EXPAND,
+    COLLAPSE_OR_EXPAND_TO_NEAREST
 }
 
-@FloatRange(from = 0.0, to = 1.0)
-private fun calculateGrowthFactor(
+private fun determineCollapsingState(
     totalExpandedHeight: Int,
     currentHeight: Int
-): Float {
-    if (totalExpandedHeight <= 0 || currentHeight < 0 || currentHeight > totalExpandedHeight) return 0f
-    return currentHeight.toFloat() / totalExpandedHeight.toFloat()
-}
-
-@Composable
-fun Int.toDp(): Dp = with(LocalDensity.current) {
-    toDp()
+): CollapsingState {
+    if (totalExpandedHeight <= 0 || currentHeight < 0 || currentHeight > totalExpandedHeight) return CollapsingState.Collapsed
+    return CollapsingState.fromProgress(
+        progress = currentHeight.toFloat() / totalExpandedHeight.toFloat()
+    )
 }

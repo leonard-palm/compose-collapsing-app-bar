@@ -9,7 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import de.bornholdtlee.compose_collapsing_app_bar.CollapsingState
 import de.bornholdtlee.compose_collapsing_app_bar.CollapsingTopAppBarLayout
+import de.bornholdtlee.compose_collapsing_app_bar.EndedInPartialTransitionStrategy
 import de.bornholdtlee.compose_collapsing_app_bar.rememberCustomScrollState
 
 class MainActivity : AppCompatActivity() {
@@ -23,18 +25,19 @@ class MainActivity : AppCompatActivity() {
             CollapsingTopAppBarLayout(
                 modifier = Modifier.fillMaxSize(),
                 scrollState = scrollState,
-                barStaticContent = { growthFactor: Float ->
+                barStaticContent = { collapsingState: CollapsingState ->
                     BarStaticContent(
-                        growthFactor = growthFactor
+                        growthFactor = collapsingState.progress
                     )
                 },
-                barCollapsingContent = { growthFactor: Float ->
+                barCollapsingContent = { collapsingState: CollapsingState ->
                     BarCollapsingContent(
-                        growthFactor = growthFactor
+                        growthFactor = collapsingState.progress
                     )
                 },
                 barCollapsingRadiusBottomStart = 12.dp,
                 barCollapsingRadiusBottomEnd = 12.dp,
+                endedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.EXPAND,
                 screenContent = {
                     MainContent()
                 }
