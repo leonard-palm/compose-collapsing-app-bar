@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import de.bornholdtlee.compose_collapsing_app_bar.CollapsingState
 import de.bornholdtlee.compose_collapsing_app_bar.CollapsingTopAppBarLayout
 import de.bornholdtlee.compose_collapsing_app_bar.EndedInPartialTransitionStrategy
-import de.bornholdtlee.compose_collapsing_app_bar.rememberCustomScrollState
+import de.bornholdtlee.compose_collapsing_app_bar.rememberCollapsingTopAppBarState
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,28 +20,31 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
 
-            val scrollState = rememberCustomScrollState()
+            ComposeCollapsingAppBarLibTheme {
 
-            CollapsingTopAppBarLayout(
-                modifier = Modifier.fillMaxSize(),
-                scrollState = scrollState,
-                barStaticContent = { collapsingState: CollapsingState ->
-                    BarStaticContent(
-                        growthFactor = collapsingState.progress
-                    )
-                },
-                barCollapsingContent = { collapsingState: CollapsingState ->
-                    BarCollapsingContent(
-                        growthFactor = collapsingState.progress
-                    )
-                },
-                barCollapsingRadiusBottomStart = 12.dp,
-                barCollapsingRadiusBottomEnd = 12.dp,
-                endedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.EXPAND,
-                screenContent = {
-                    MainContent()
-                }
-            )
+                val collapsingTopAppBarState = rememberCollapsingTopAppBarState()
+
+                CollapsingTopAppBarLayout(
+                    modifier = Modifier.fillMaxSize(),
+                    state = collapsingTopAppBarState,
+                    barStaticContent = { collapsingState: CollapsingState ->
+                        BarStaticContent(
+                            growthFactor = collapsingState.progress
+                        )
+                    },
+                    barCollapsingContent = { collapsingState: CollapsingState ->
+                        BarCollapsingContent(
+                            growthFactor = collapsingState.progress
+                        )
+                    },
+                    barCollapsingRadiusBottomStart = 12.dp,
+                    barCollapsingRadiusBottomEnd = 12.dp,
+                    endedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.Stay,
+                    screenContent = {
+                        MainContent()
+                    }
+                )
+            }
         }
     }
 }
@@ -53,7 +56,7 @@ private fun BarStaticContent(growthFactor: Float) {
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        Text("Static")
+        Text("Static $growthFactor")
     }
 }
 
@@ -76,10 +79,10 @@ private fun BarCollapsingContent(growthFactor: Float) {
 
 @Composable
 private fun MainContent() {
-    for (i in 1..100) {
+    for (i in 0..99) {
         Text(
             modifier = Modifier.padding(8.dp),
-            text = "Content"
+            text = "Content $i"
         )
     }
 }

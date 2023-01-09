@@ -34,10 +34,14 @@ sealed class CollapsingState(
             COLLAPSE
         }
 
-        val preferredProgressDirection: PreferredProgressDirection
-            get() = when {
-                progress >= 0.5F -> PreferredProgressDirection.EXPAND
+        fun determinePreferredProgressDirection(
+            @FloatRange(0.0, 1.0) threshold: Float
+        ): PreferredProgressDirection {
+            assert(threshold in 0F..1F) { "'threshold' must be in range 0.0 .. 1.0" }
+            return when {
+                progress >= threshold -> PreferredProgressDirection.EXPAND
                 else -> PreferredProgressDirection.COLLAPSE
             }
+        }
     }
 }

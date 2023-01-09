@@ -1,109 +1,45 @@
 package de.bornholdtlee.compose_collapsing_app_bar
 
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import de.bornholdtlee.compose_collapsing_app_bar.CollapsingState.InTransition.PreferredProgressDirection
 
 @Composable
 fun CollapsingTopAppBarLayout(
     modifier: Modifier = Modifier,
-    scrollState: CustomScrollState,
+    state: CollapsingTopAppBarState = rememberCollapsingTopAppBarState(),
     barStaticContent: @Composable (collapsingState: CollapsingState) -> Unit,
     barStaticBackgroundColor: Color = MaterialTheme.colors.primary,
     barCollapsingContent: @Composable (collapsingState: CollapsingState) -> Unit,
     barCollapsingBackgroundColor: Color = MaterialTheme.colors.primaryVariant,
     barCollapsingRadiusBottomStart: Dp = 0.dp,
     barCollapsingRadiusBottomEnd: Dp = 0.dp,
-    endedInPartialTransitionStrategy: EndedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.COLLAPSE_OR_EXPAND_TO_NEAREST,
+    endedInPartialTransitionStrategy: EndedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.CollapseOrExpandToNearest(),
     screenContent: @Composable ColumnScope.() -> Unit
 ) {
+
+    LaunchedEffect(key1 = state.scrollState.isScrollInProgress) {
+        if (!state.scrollState.isScrollInProgress) {
+            state.handleEndedInTransition(
+                endedInPartialTransitionStrategy = endedInPartialTransitionStrategy
+            )
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxWidth()
     ) {
-
-        // Measured height of the static top part
-        var barStaticContentHeightPx: Int by remember { mutableStateOf(0) }
-
-        // Measured height of the collapsible part but in its expanded state
-        var barCollapsibleContentExpandedHeightPx: Int by remember { mutableStateOf(0) }
-
-        // Total app bar height in its expanded state
-        val totalBarHeightPx: Int by remember(barStaticContentHeightPx) {
-            derivedStateOf {
-                barStaticContentHeightPx + barCollapsibleContentExpandedHeightPx
-            }
-        }
-
-        // Calculated height of the collapsible content depending on the scroll offset
-        val collapsibleHeightPx: Int by remember(
-            key1 = totalBarHeightPx,
-            key2 = scrollState.value
-        ) {
-            derivedStateOf {
-                (barCollapsibleContentExpandedHeightPx - scrollState.value.toInt())
-                    .coerceAtLeast(0)
-            }
-        }
-
-        // TODO: Move to dedicated state holder
-        val collapsingState: CollapsingState by remember(
-            key1 = collapsibleHeightPx
-        ) {
-            derivedStateOf {
-                determineCollapsingState(
-                    totalExpandedHeight = barCollapsibleContentExpandedHeightPx,
-                    currentHeight = collapsibleHeightPx
-                )
-            }
-        }
-
-        // TODO: Move to dedicated state holder
-        suspend fun collapse() {
-            scrollState.animateScrollTo(value = barCollapsibleContentExpandedHeightPx)
-
-        }
-
-        // TODO: Move to dedicated state holder
-        suspend fun expand() {
-            scrollState.animateScrollTo(value = 0)
-        }
-
-        // TODO: Move to dedicated state holder
-        suspend fun onHandleEndedInTransition(inTransitionState: CollapsingState.InTransition) {
-            when (endedInPartialTransitionStrategy) {
-                EndedInPartialTransitionStrategy.STAY -> {}
-                EndedInPartialTransitionStrategy.COLLAPSE -> collapse()
-                EndedInPartialTransitionStrategy.EXPAND -> expand()
-                EndedInPartialTransitionStrategy.COLLAPSE_OR_EXPAND_TO_NEAREST -> {
-                    when (inTransitionState.preferredProgressDirection) {
-                        PreferredProgressDirection.EXPAND -> expand()
-                        PreferredProgressDirection.COLLAPSE -> collapse()
-                    }
-                }
-            }
-        }
-
-        LaunchedEffect(key1 = scrollState.isScrollInProgress) {
-            if (!scrollState.isScrollInProgress) {
-                collapsingState.let { immutableCollapsingState ->
-                    if (immutableCollapsingState is CollapsingState.InTransition) {
-                        onHandleEndedInTransition(
-                            inTransitionState = immutableCollapsingState
-                        )
-                    }
-                }
-            }
-        }
 
         Column(
             modifier = Modifier.zIndex(1F)
@@ -117,10 +53,10 @@ fun CollapsingTopAppBarLayout(
                         color = barStaticBackgroundColor
                     )
                     .onGloballyPositioned { layoutCoordinates ->
-                        barStaticContentHeightPx = layoutCoordinates.size.height
+                        state.onStaticBarMeasureResult(layoutCoordinates.size.height)
                     }
             ) {
-                barStaticContent(collapsingState)
+                barStaticContent(state.collapsingState)
             }
 
             Measure(
@@ -128,7 +64,7 @@ fun CollapsingTopAppBarLayout(
                     barCollapsingContent(CollapsingState.Collapsed)
                 },
                 onMeasured = { size ->
-                    barCollapsibleContentExpandedHeightPx = size.height
+                    state.onCollapsingBarMeasureResult(size.height)
                 }
             )
 
@@ -136,7 +72,7 @@ fun CollapsingTopAppBarLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(
-                        height = collapsibleHeightPx.toDp()
+                        height = state.collapsibleHeightPx.toDp()
                     )
                     .background(
                         color = barCollapsingBackgroundColor,
@@ -147,7 +83,7 @@ fun CollapsingTopAppBarLayout(
                     )
 
             ) {
-                barCollapsingContent(collapsingState)
+                barCollapsingContent(state.collapsingState)
             }
         }
 
@@ -155,11 +91,11 @@ fun CollapsingTopAppBarLayout(
             modifier = Modifier
                 .zIndex(0f)
                 .fillMaxSize()
-                .verticalScroll(scrollState),
+                .verticalScroll(state.scrollState),
         ) {
             Spacer(
                 modifier = Modifier.height(
-                    height = totalBarHeightPx.toDp()
+                    height = state.totalBarHeightPx.toDp()
                 )
             )
             this.screenContent()
@@ -167,19 +103,16 @@ fun CollapsingTopAppBarLayout(
     }
 }
 
-enum class EndedInPartialTransitionStrategy {
-    STAY,
-    COLLAPSE,
-    EXPAND,
-    COLLAPSE_OR_EXPAND_TO_NEAREST
-}
+sealed class EndedInPartialTransitionStrategy {
 
-private fun determineCollapsingState(
-    totalExpandedHeight: Int,
-    currentHeight: Int
-): CollapsingState {
-    if (totalExpandedHeight <= 0 || currentHeight < 0 || currentHeight > totalExpandedHeight) return CollapsingState.Collapsed
-    return CollapsingState.fromProgress(
-        progress = currentHeight.toFloat() / totalExpandedHeight.toFloat()
-    )
+    object Stay : EndedInPartialTransitionStrategy()
+
+    data class Collapse(val animationSpec: AnimationSpec<Float> = SpringSpec()) : EndedInPartialTransitionStrategy()
+
+    data class Expand(val animationSpec: AnimationSpec<Float> = SpringSpec()) : EndedInPartialTransitionStrategy()
+
+    data class CollapseOrExpandToNearest(
+        val animationSpec: AnimationSpec<Float> = SpringSpec(),
+        val threshold: Float = 0.5f
+    ) : EndedInPartialTransitionStrategy()
 }
