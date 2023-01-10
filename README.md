@@ -39,7 +39,7 @@ CollapsingTopAppBarLayout(
 - `barCollapsingRadiusBottomStart`: Optional. Defaults to `0dp`.
 - `barCollapsingRadiusBottomEnd`: Optional. Defaults to `0dp`.
 - `endedInPartialTransitionStrategy`: Optional. Defaults to `EndedInPartialTransitionStrategy.CollapseOrExpandToNearest()`. This defines how the `barCollapsingContent` behaves when the scrolling ended in state where it is not fully collapsed or expanded. Have a look into the java docs from `EndedInPartialTransitionStrategy` to see all possible strategies.
-- `screenContent`: This is the main screen content composeable. Your Content is being composed in a `ColumnScope` on root level.
+- `screenContent`: This is the main screen content composable. Your Content is being composed in a `ColumnScope` on root level.
 
 
 #### TODOS
