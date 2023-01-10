@@ -37,6 +37,9 @@ class CollapsingTopAppBarState(
 
     val collapsingState: CollapsingState
         get() {
+            if (barCollapsibleContentExpandedHeightPx == 0) {
+                return CollapsingState.Initialising
+            }
             if (barCollapsibleContentExpandedHeightPx <= 0 || collapsibleHeightPx <= 0) {
                 return CollapsingState.Collapsed
             }

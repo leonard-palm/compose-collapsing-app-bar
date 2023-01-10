@@ -51,4 +51,6 @@ dependencies {
 
     implementation project(":compose-collapsing-app-bar")
     implementation 'androidx.appcompat:appcompat:1.5.1'
+
+    implementation "com.airbnb.android:lottie-compose:5.2.0"
 }

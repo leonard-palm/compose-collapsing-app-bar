@@ -61,7 +61,7 @@ fun CollapsingTopAppBarLayout(
 
             Measure(
                 content = @Composable {
-                    barCollapsingContent(CollapsingState.Collapsed)
+                    barCollapsingContent(CollapsingState.Initialising)
                 },
                 onMeasured = { size ->
                     state.onCollapsingBarMeasureResult(size.height)

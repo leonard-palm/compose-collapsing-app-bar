@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 val LightColors = lightColors(
-    primary = Color(0xff0083e1),
-    primaryVariant = Color(0xff5674ea)
+    primary = Color(0xff00de71),
+    primaryVariant = Color(0xff94ffbb)
 )
 
 @Composable

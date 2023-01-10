@@ -23,6 +23,8 @@ sealed class CollapsingState(
         }
     }
 
+    object Initialising : CollapsingState(progress = PROGRESS_VALUE_COLLAPSED)
+
     object Collapsed : CollapsingState(progress = PROGRESS_VALUE_COLLAPSED)
 
     object Expanded : CollapsingState(progress = PROGRESS_VALUE_EXPANDED)
