@@ -89,6 +89,18 @@ private fun ExampleLazyColumn() {
 }
 
 fun LazyListScope.mainContentLazyColumn() {
+
+    item {
+        Text(
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            text = "Upcoming Matches",
+            style = LocalTextStyle.current.copy(
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        )
+    }
+
     items(
         count = 20,
     ) {

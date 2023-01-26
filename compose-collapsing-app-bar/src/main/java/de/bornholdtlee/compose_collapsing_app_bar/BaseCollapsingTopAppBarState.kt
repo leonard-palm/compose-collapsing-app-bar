@@ -84,7 +84,8 @@ class CollapsingTopAppBarLazyColumnState(
     override fun collapse(animationSpec: AnimationSpec<Float>) {
         coroutineScope.launch {
             lazyListState.animateScrollToItem(
-                index = 1
+                index = 1,
+                scrollOffset = -barStaticContentHeightPx
             )
         }
     }
@@ -105,7 +106,7 @@ abstract class BaseCollapsingTopAppBarState(
 
     internal abstract val scrollingOffsetPx: Float
 
-    private var barStaticContentHeightPx: Int by mutableStateOf(0)
+    internal var barStaticContentHeightPx: Int by mutableStateOf(0)
 
     internal var barCollapsibleContentExpandedHeightPx: Int by mutableStateOf(0)
         private set
