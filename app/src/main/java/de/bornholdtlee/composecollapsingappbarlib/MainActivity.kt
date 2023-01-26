@@ -1,15 +1,14 @@
 package de.bornholdtlee.composecollapsingappbarlib
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
@@ -25,47 +24,77 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import de.bornholdtlee.compose_collapsing_app_bar.CollapsingState
-import de.bornholdtlee.compose_collapsing_app_bar.CollapsingTopAppBarLayout
-import de.bornholdtlee.compose_collapsing_app_bar.EndedInPartialTransitionStrategy
-import de.bornholdtlee.compose_collapsing_app_bar.rememberCollapsingTopAppBarState
+import de.bornholdtlee.compose_collapsing_app_bar.*
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-
             ComposeCollapsingAppBarLibTheme {
-
-                val collapsingTopAppBarState = rememberCollapsingTopAppBarState()
-
-                CollapsingTopAppBarLayout(
-                    modifier = Modifier.fillMaxSize(),
-                    state = collapsingTopAppBarState,
-                    barStaticContent = { collapsingState: CollapsingState ->
-                        BarStaticContent(
-                            collapsingState = collapsingState
-                        )
-                    },
-                    barCollapsingContent = { collapsingState: CollapsingState ->
-                        BarCollapsingContent(
-                            collapsingState = collapsingState
-                        )
-                    },
-                    barCollapsingRadiusBottomStart = 16.dp,
-                    barCollapsingRadiusBottomEnd = 16.dp,
-                    endedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.Expand(
-                        animationSpec = tween(
-                            durationMillis = 500
-                        )
-                    ),
-                    screenContent = {
-                        MainContent()
-                    }
-                )
+                ExampleLazyColumn()
             }
         }
+    }
+}
+
+@Composable
+private fun ExampleColumn() {
+
+    val collapsingTopAppBarState = rememberCollapsingTopAppBarColumnState()
+
+    CollapsingTopAppBarLayout(
+        modifier = Modifier.fillMaxSize(),
+        state = collapsingTopAppBarState,
+        barStaticContent = { collapsingState: CollapsingState ->
+            BarStaticContent(collapsingState)
+        },
+        barStaticBackgroundColor = MaterialTheme.colors.primary,
+        barCollapsingContent = { collapsingState: CollapsingState ->
+            BarCollapsingContent(collapsingState)
+        },
+        barCollapsingBackgroundColor = MaterialTheme.colors.primaryVariant,
+        barCollapsingRadiusBottomStart = 16.dp,
+        barCollapsingRadiusBottomEnd = 16.dp,
+        endedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.CollapseOrExpandToNearest(),
+        screenContent = {
+            MainContentColumn()
+        }
+    )
+}
+
+@Composable
+private fun ExampleLazyColumn() {
+
+    val collapsingTopAppBarState = rememberCollapsingTopAppBarLazyColumnState()
+
+    CollapsingTopAppBarLazyLayout(
+        modifier = Modifier.fillMaxSize(),
+        state = collapsingTopAppBarState,
+        barStaticContent = { collapsingState: CollapsingState ->
+            BarStaticContent(collapsingState)
+        },
+        barStaticBackgroundColor = MaterialTheme.colors.primary,
+        barCollapsingContent = { collapsingState: CollapsingState ->
+            BarCollapsingContent(collapsingState)
+        },
+        barCollapsingBackgroundColor = MaterialTheme.colors.primaryVariant,
+        barCollapsingRadiusBottomStart = 16.dp,
+        barCollapsingRadiusBottomEnd = 16.dp,
+        endedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.CollapseOrExpandToNearest(),
+        screenContent = {
+            mainContentLazyColumn()
+        }
+    )
+}
+
+fun LazyListScope.mainContentLazyColumn() {
+    items(
+        count = 20,
+    ) {
+        ListItemNextGame(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
     }
 }
 
@@ -73,7 +102,6 @@ class MainActivity : AppCompatActivity() {
 private fun BarStaticContent(collapsingState: CollapsingState) {
 
     val elevation: Dp = 8.dp * (1f - collapsingState.progress)
-    Log.d("Leonard", "progress: ${collapsingState.progress} $elevation")
 
     TopAppBar(
         elevation = elevation,
@@ -323,7 +351,7 @@ private fun BarCollapsingContent(collapsingState: CollapsingState) {
 }
 
 @Composable
-private fun MainContent() {
+private fun MainContentColumn() {
 
     Spacer(modifier = Modifier.height(16.dp))
 

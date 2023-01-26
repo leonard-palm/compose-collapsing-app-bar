@@ -4,6 +4,8 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -18,7 +20,7 @@ import androidx.compose.ui.zIndex
 @Composable
 fun CollapsingTopAppBarLayout(
     modifier: Modifier = Modifier,
-    state: CollapsingTopAppBarState = rememberCollapsingTopAppBarState(),
+    state: CollapsingTopAppBarColumnState = rememberCollapsingTopAppBarColumnState(),
     barStaticContent: @Composable (collapsingState: CollapsingState) -> Unit,
     barStaticBackgroundColor: Color = MaterialTheme.colors.primary,
     barCollapsingContent: @Composable (collapsingState: CollapsingState) -> Unit,
@@ -72,7 +74,7 @@ fun CollapsingTopAppBarLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(
-                        height = state.collapsibleHeightPx.toDp()
+                        height = state.collapsibleHeightPx.value.toDp()
                     )
                     .background(
                         color = barCollapsingBackgroundColor,
@@ -99,6 +101,97 @@ fun CollapsingTopAppBarLayout(
                 )
             )
             this.screenContent()
+        }
+    }
+}
+
+@Composable
+fun CollapsingTopAppBarLazyLayout(
+    modifier: Modifier = Modifier,
+    state: CollapsingTopAppBarLazyColumnState = rememberCollapsingTopAppBarLazyColumnState(),
+    barStaticContent: @Composable (collapsingState: CollapsingState) -> Unit,
+    barStaticBackgroundColor: Color = MaterialTheme.colors.primary,
+    barCollapsingContent: @Composable (collapsingState: CollapsingState) -> Unit,
+    barCollapsingBackgroundColor: Color = MaterialTheme.colors.primaryVariant,
+    barCollapsingRadiusBottomStart: Dp = 0.dp,
+    barCollapsingRadiusBottomEnd: Dp = 0.dp,
+    endedInPartialTransitionStrategy: EndedInPartialTransitionStrategy = EndedInPartialTransitionStrategy.CollapseOrExpandToNearest(),
+    screenContent: LazyListScope.() -> Unit
+) {
+
+    LaunchedEffect(key1 = state.lazyListState.isScrollInProgress) {
+        if (!state.lazyListState.isScrollInProgress) {
+            state.handleEndedInTransition(
+                endedInPartialTransitionStrategy = endedInPartialTransitionStrategy
+            )
+        }
+    }
+
+    Box(
+        modifier = modifier.fillMaxWidth()
+    ) {
+
+        Column(
+            modifier = Modifier.zIndex(1F)
+        ) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .background(
+                        color = barStaticBackgroundColor
+                    )
+                    .onGloballyPositioned { layoutCoordinates ->
+                        state.onStaticBarMeasureResult(layoutCoordinates.size.height)
+                    }
+            ) {
+                barStaticContent(state.collapsingState)
+            }
+
+            Measure(
+                content = @Composable {
+                    barCollapsingContent(CollapsingState.Initialising)
+                },
+                onMeasured = { size ->
+                    state.onCollapsingBarMeasureResult(size.height)
+                }
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(
+                        height = state.collapsibleHeightPx.value.toDp()
+                    )
+                    .background(
+                        color = barCollapsingBackgroundColor,
+                        shape = RoundedCornerShape(
+                            bottomStart = barCollapsingRadiusBottomStart,
+                            bottomEnd = barCollapsingRadiusBottomEnd
+                        )
+                    )
+
+            ) {
+                barCollapsingContent(state.collapsingState)
+            }
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .zIndex(0f)
+                .fillMaxSize(),
+            state = state.lazyListState
+        ) {
+
+            item {
+                Spacer(
+                    modifier = Modifier.height(
+                        height = state.totalBarHeightPx.toDp()
+                    )
+                )
+            }
+            screenContent()
         }
     }
 }
