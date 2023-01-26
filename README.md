@@ -92,6 +92,7 @@ CollapsingTopAppBarLazyLayout(
 
 ## Installation
 
+Add it in your root build.gradle at the end of repositories
 ```gradle
 allprojects {
    repositories {
@@ -99,6 +100,11 @@ allprojects {
        maven { url "https://jitpack.io" }
    }
 }
+
+```
+
+Add the dependency to your module
+```gradle
 dependencies {
    implementation 'com.github.leonard-palm:compose-collapsing-app-bar:1.1.0'
 }
