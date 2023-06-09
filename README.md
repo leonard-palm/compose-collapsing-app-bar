@@ -100,6 +100,6 @@ allprojects {
    }
 }
 dependencies {
-   implementation 'com.github.leonard-palm:compose-collapsing-app-bar:1.1.0'
+   implementation 'com.github.leonard-palm:compose-collapsing-app-bar:1.2.0'
 }
 ``` 
